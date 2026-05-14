@@ -11,7 +11,7 @@ SOCKS5 прокси сервер на базе SSH туннеля. Позвол�
 ## Шаг 1 - Клонирование репозитория
 
 ```bash
-git clone <URL_репозитория> /opt/ssh_proxy
+git clone https://github.com/Antowka/ssh_proxy.git /opt/ssh_proxy
 cd /opt/ssh_proxy
 ```
 
