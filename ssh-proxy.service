@@ -1,0 +1,13 @@
+[Unit]
+Description=SSH SOCKS Proxy
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/ssh_proxy/ssh_proxy.py
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
