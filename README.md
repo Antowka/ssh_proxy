@@ -1,131 +1,61 @@
 # SSH SOCKS Proxy
 
-SOCKS5 прокси сервер на базе SSH туннеля. Позволяет маршрутизировать трафик через удаленный SSH сервер.
+## Описание
 
-## Принцип работы
+SSH SOCKS Proxy — служба, которая создаёт постоянный SSH-туннель с динамическим пробросом портов (SOCKS5 прокси). Позволяет маршрутизировать трафик через удалённый SSH-сервер.
 
-```
-Клиент -> :8787 (SOCKS5) -> SSH Сервер -> Интернет
-```
+## Параметры
 
-## Шаг 1 - Клонирование репозитория
+| Параметр | Описание | По умолчанию |
+|----------|---------|--------------|
+| `HOST` | Адрес SSH-сервера | `example.com` |
+| `PORT` | Порт SSH-сервера | `22` |
+| `USER` | Имя пользователя | `root` |
+| `PASSWORD` | Пароль | `Passw0rd` |
+| `PROXY_PORT` | Порт SOCKS-прокси | `8787` |
+| `RECONNECT_DELAY` | Задержка переподключения (сек) | `5` |
+| `LOG_FILE` | Путь к логу | `/opt/ssh_proxy/ssh-proxy.log` |
 
-```bash
-git clone https://github.com/Antowka/ssh_proxy.git /opt/ssh_proxy
-cd /opt/ssh_proxy
-```
+## Установка и запуск
 
-## Шаг 2 - Установка зависимостей
-
-```bash
-apt update
-apt install -y python3 python3-pip
-pip3 install paramiko
-```
-
-## Шаг 3 - Настройка
-
-Откройте `ssh_proxy.py` и измените параметры подключения к вашему SSH серверу:
-
-```python
-HOST = "your-ssh-server.com"      # Адрес SSH сервера
-PORT = 22                          # SSH порт (по умолчанию 22)
-USER = "username"                 # Имя пользователя SSH
-PASSWORD = "your_password"        # Пароль SSH
-PROXY_PORT = 8787                  # Порт SOCKS прокси (любой свободный)
-RECONNECT_DELAY = 5                # Пауза перед переподключением (сек)
-```
-
-## Шаг 4 - Запуск и проверка
-
-Запустите сервис вручную для проверки:
+### 1. Установка зависимостей
 
 ```bash
-python3 /opt/ssh_proxy/ssh_proxy.py
+sudo apt install sshpass
 ```
 
-Если в логах появилось `Connected to <SERVER>` и `SOCKS proxy listening on 0.0.0.0:8787` - всё работает.
-
-Для остановки нажмите `Ctrl+C`.
-
-## Шаг 5 - Установка как systemd сервис (автозапуск)
-
-Скопируйте unit файл:
+### 2. Клонирование репозитория
 
 ```bash
-cp /opt/ssh_proxy/ssh-proxy.service /etc/systemd/system/
+sudo git clone https://github.com/Antowka/ssh_proxy.git /opt/ssh_proxy
+sudo chmod +x /opt/ssh_proxy/ssh_proxy.py
 ```
 
-Перезагрузите systemd:
+### 3. Systemctl
 
 ```bash
-systemctl daemon-reload
+sudo cp ssh-proxy.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now ssh-proxy
 ```
 
-Включите автозапуск:
+### 4. Управление
 
 ```bash
-systemctl enable ssh-proxy
+sudo systemctl status ssh-proxy   # статус
+sudo systemctl restart ssh-proxy  # перезапуск
+sudo systemctl stop ssh-proxy    # остановка
+sudo journalctl -u ssh-proxy -f   # логи
 ```
 
-Запустите:
+## Настройка
+
+Отредактируйте `/opt/ssh_proxy/ssh_proxy.py` и измените параметры в начале файла (`HOST`, `PORT`, `USER`, `PASSWORD`, `PROXY_PORT`). После изменений перезапустите службу:
 
 ```bash
-systemctl start ssh-proxy
+sudo systemctl restart ssh-proxy
 ```
 
-## Управление сервисом
+## Использование
 
-```bash
-systemctl status ssh-proxy   # Проверить статус
-systemctl restart ssh-proxy  # Перезапустить
-systemctl stop ssh-proxy     # Остановить
-```
-
-## Просмотр логов
-
-```bash
-tail -f /opt/ssh_proxy/ssh-proxy.log
-```
-
-## Настройка клиентов
-
-### Браузер (Firefox)
-
-1. Меню -> Настройки -> Прокси
-2. Выберите "Ручная настройка прокси"
-3. SOCKS Host: `127.0.0.1`
-4. Порт: `8787`
-5. Отметьте "SOCKS v5"
-6. Нажмите "OK"
-
-### Браузер (Chrome)
-
-Используйте расширение типа "SwitchyOmega" или "Proxifier".
-
-### curl
-
-```bash
-curl --socks5 127.0.0.1:8787 http://example.com
-```
-
-### Терминал (все приложения)
-
-```bash
-export all_proxy="socks5://127.0.0.1:8787"
-```
-
-## Возможные проблемы
-
-| Ошибка | Причина | Решение |
-|--------|---------|---------|
-| `Temporary failure in name resolution` | Не работает DNS | Проверьте `/etc/resolv.conf` |
-| `Connection timed out` | SSH сервер недоступен | Проверьте HOST, PORT, файрвол |
-| `Authentication failed` | Неверный логин/пароль | Проверьте USER и PASSWORD |
-| `SSH transport not active` | Соединение разорвано | Подождите автоматическое переподключение |
-
-## Безопасность
-
-- Пароль в открытом виде!!! Будьте внимательны
-- Ограничьте доступ к порту 8787 файрволом
-- Не запускайте от root без необходимости
+После запуска SOCKS-прокси доступен по адресу `http://127.0.0.1:8787` (или `0.0.0.0:8787` для внешнего доступа). Настройте браузер или приложение использовать SOCKS5 прокси с этим адресом.
